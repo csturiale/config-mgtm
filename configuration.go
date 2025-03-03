@@ -31,7 +31,7 @@ func readConfigPerEnvironment() {
 	env := os.Getenv("env")
 	if env != "" {
 		viper.AddConfigPath("assets/application/configuration/")
-		viper.SetConfigName(fmt.Sprintf("%s-%s", "configuration", env)) // Register config file name (no extension)
+		viper.SetConfigName(fmt.Sprintf("%s-%s", "configuration", strings.ToLower(env))) // Register config file name (no extension)
 		viper.SetConfigType("yaml")
 		err := viper.MergeInConfig()
 		if err != nil {
