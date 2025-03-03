@@ -12,17 +12,16 @@ func init() {
 	viper.AddConfigPath("assets/application/configuration/")
 	viper.SetConfigName("configuration") // Register config file name (no extension)
 	viper.SetConfigType("yaml")          // Look for specific type
+
+	readConfigPerEnvironment()
+
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	err := viper.ReadInConfig()
-
-	initLogger()
-
 	if err != nil {
 		logger.Fatalln("Cannot read application configuration")
 	}
-
-	readConfigPerEnvironment()
+	initLogger()
 
 	viper.WatchConfig()
 	viper.OnConfigChange(onConfigChange)
