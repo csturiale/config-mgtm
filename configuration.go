@@ -42,21 +42,21 @@ func readConfigPerEnvironment() {
 }
 
 func onConfigChange(e fsnotify.Event) {
-	logger.Debugln(fmt.Sprintf("Config file changed: %s", e.Name))
+	logger.Traceln(fmt.Sprintf("Config file changed: %s", e.Name))
 }
 
 func GetItem(key string) any {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	return viper.Get(key)
 }
 
 func GetStringSlice(key string) []string {
-	logger.Debugln(fmt.Sprintf("Returning slice for %s", key))
+	logger.Traceln(fmt.Sprintf("Returning slice for %s", key))
 	return viper.GetStringSlice(key)
 }
 
 func GetItemOrDefault(key string, val any) any {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	if viper.Get(key) == nil {
 		return val
 	}
@@ -71,12 +71,12 @@ func GetItemToStruct(key string, a any) {
 }
 
 func GetString(key string) string {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	return viper.GetString(key)
 }
 
 func GetStringOrDefault(key string, val string) string {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	if viper.Get(key) == nil {
 		return val
 	}
@@ -84,12 +84,12 @@ func GetStringOrDefault(key string, val string) string {
 }
 
 func GetInt(key string) int {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	return viper.GetInt(key)
 }
 
 func GetIntOrDefault(key string, val int) int {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	if viper.Get(key) == nil {
 		return val
 	}
@@ -97,12 +97,12 @@ func GetIntOrDefault(key string, val int) int {
 }
 
 func GetBool(key string) bool {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	return viper.GetBool(key)
 }
 
 func GetBoolOrDefault(key string, val bool) bool {
-	logger.Debugln(fmt.Sprintf("Returning item %s", key))
+	logger.Traceln(fmt.Sprintf("Returning item %s", key))
 	if viper.Get(key) == nil {
 		return val
 	}
