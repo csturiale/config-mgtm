@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var enableStdOut bool = false
+
 func init() {
 	viper.AddConfigPath("assets/application/configuration/")
 	viper.SetConfigName("configuration") // Register config file name (no extension)
@@ -19,12 +21,13 @@ func init() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	err := viper.ReadInConfig()
 	if err != nil {
-		logger.Fatalln("Cannot read application configuration")
+		log.Fatalln("Cannot read application configuration")
 	}
 	initLogger()
 
 	viper.WatchConfig()
 	viper.OnConfigChange(onConfigChange)
+	enableStdOut = viper.GetBool("log.configuration.stdout")
 }
 
 func readConfigPerEnvironment() {
@@ -35,28 +38,36 @@ func readConfigPerEnvironment() {
 		viper.SetConfigType("yaml")
 		err := viper.MergeInConfig()
 		if err != nil {
-			logger.Errorln("Cannot read application configuration")
+			log.Errorln("Cannot read application configuration")
 		}
 	}
 
 }
 
 func onConfigChange(e fsnotify.Event) {
-	logger.Traceln(fmt.Sprintf("Config file changed: %s", e.Name))
+	if enableStdOut {
+		log.Debugln(fmt.Sprintf("Config file changed: %s", e.Name))
+	}
 }
 
 func GetItem(key string) any {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	return viper.Get(key)
 }
 
 func GetStringSlice(key string) []string {
-	logger.Traceln(fmt.Sprintf("Returning slice for %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning slice for %s", key))
+	}
 	return viper.GetStringSlice(key)
 }
 
 func GetItemOrDefault(key string, val any) any {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	if viper.Get(key) == nil {
 		return val
 	}
@@ -66,17 +77,21 @@ func GetItemOrDefault(key string, val any) any {
 func GetItemToStruct(key string, a any) {
 	err := viper.UnmarshalKey(key, a)
 	if err != nil {
-		logger.Errorln(fmt.Sprintf("Cannot unmarshall %s", key))
+		log.Errorln(fmt.Sprintf("Cannot unmarshall %s", key))
 	}
 }
 
 func GetString(key string) string {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	return viper.GetString(key)
 }
 
 func GetStringOrDefault(key string, val string) string {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	if viper.Get(key) == nil {
 		return val
 	}
@@ -84,12 +99,16 @@ func GetStringOrDefault(key string, val string) string {
 }
 
 func GetInt(key string) int {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	return viper.GetInt(key)
 }
 
 func GetIntOrDefault(key string, val int) int {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	if viper.Get(key) == nil {
 		return val
 	}
@@ -97,12 +116,16 @@ func GetIntOrDefault(key string, val int) int {
 }
 
 func GetBool(key string) bool {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	return viper.GetBool(key)
 }
 
 func GetBoolOrDefault(key string, val bool) bool {
-	logger.Traceln(fmt.Sprintf("Returning item %s", key))
+	if log != nil && enableStdOut {
+		log.Debugln(fmt.Sprintf("Returning item %s", key))
+	}
 	if viper.Get(key) == nil {
 		return val
 	}

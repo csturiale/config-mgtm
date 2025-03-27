@@ -2,51 +2,99 @@ package configuration
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"io"
+	"net/url"
 	"os"
 	"strings"
 )
 
-var logger *logrus.Logger
+var log *zap.SugaredLogger
 
-func initLogger() {
-	logFolder := viper.GetString("log.folder")
-	err := os.MkdirAll(logFolder, os.ModePerm)
-	if err != nil {
-		fmt.Errorf("error creating log folder: %v", err)
-		os.Exit(1)
-	}
-	logger = logrus.New()
-	logger.SetFormatter(&logrus.TextFormatter{})
-	logger.SetLevel(getLogLevel())
-
-	mw := io.MultiWriter(os.Stdout, &lumberjack.Logger{
-		Filename:   fmt.Sprintf("%s/%s", logFolder, "configuration.log"),
-		MaxSize:    GetIntOrDefault("log.file.maxSize", 10),     // Max size in MB
-		MaxBackups: GetIntOrDefault("log.file.maxBackups", 3),   // Max number of old log files to keep
-		MaxAge:     GetIntOrDefault("log.file.maxAge", 28),      // Max age in days to keep a log file
-		Compress:   GetBoolOrDefault("log.file.compress", true), // Compress old log files
-	})
-	logger.SetOutput(mw)
+type lumberjackSink struct {
+	*lumberjack.Logger
 }
 
-func getLogLevel() logrus.Level {
+func (lumberjackSink) Sync() error {
+	return nil
+}
+func initLogger() {
+	enableFileLogging := GetBoolOrDefault("log.file.enable", true)
+	logFolder := viper.GetString("log.folder")
+	outputPaths := []string{"stdout"}
+	errorPaths := []string{"stderr"}
+
+	if enableFileLogging {
+		err := os.MkdirAll(logFolder, os.ModePerm)
+		if err != nil {
+			fmt.Errorf("error creating log folder: %v", err)
+			os.Exit(1)
+		}
+
+		ll := lumberjack.Logger{
+			Filename:   fmt.Sprintf("%s/%s", logFolder, "configuration.log"),
+			MaxSize:    GetIntOrDefault("log.file.maxSize", 10),     // Max size in MB
+			MaxBackups: GetIntOrDefault("log.file.maxBackups", 3),   // Max number of old log files to keep
+			MaxAge:     GetIntOrDefault("log.file.maxAge", 28),      // Max age in days to keep a log file
+			Compress:   GetBoolOrDefault("log.file.compress", true), // Compress old log files
+		}
+		err = zap.RegisterSink("config", func(*url.URL) (zap.Sink, error) {
+			return lumberjackSink{
+				Logger: &ll,
+			}, nil
+		})
+		if err != nil {
+			panic(fmt.Sprintf("build zap logger from config error: %v", err))
+		}
+		outputPaths = append(outputPaths, fmt.Sprintf("config:%s", fmt.Sprintf("%s/%s", logFolder, fmt.Sprintf("%s/%s", logFolder, "configuration.log"))))
+	}
+
+	cfg := zap.Config{
+		Encoding:         "console",
+		Level:            zap.NewAtomicLevelAt(getLogLevel()),
+		OutputPaths:      outputPaths,
+		ErrorOutputPaths: errorPaths,
+		Development:      GetBoolOrDefault("log.dev", false),
+		EncoderConfig: zapcore.EncoderConfig{
+			LevelKey:      "level",
+			TimeKey:       "time",
+			EncodeTime:    zapcore.ISO8601TimeEncoder,
+			CallerKey:     "caller",
+			EncodeCaller:  zapcore.ShortCallerEncoder,
+			NameKey:       "logger",
+			MessageKey:    "msg",
+			StacktraceKey: "stacktrace",
+			LineEnding:    zapcore.DefaultLineEnding,
+			//EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+			EncodeDuration: zapcore.SecondsDurationEncoder,
+		},
+	}
+	logger, err := cfg.Build(zap.AddCallerSkip(1))
+	if err != nil {
+		panic(fmt.Sprintf("build zap logger from config error: %v", err))
+	}
+	defer logger.Sync() // flushes buffer, if any
+	log = logger.Sugar()
+}
+
+func getLogLevel() zapcore.Level {
 	lvl := strings.ToLower(GetStringOrDefault("log.level", "info"))
 	switch lvl {
 	case "info":
-		return logrus.InfoLevel
+		return zapcore.InfoLevel
 	case "debug":
-		return logrus.DebugLevel
-	case "trace":
-		return logrus.TraceLevel
+		return zapcore.DebugLevel
+	case "warn":
+		return zapcore.WarnLevel
 	case "error":
-		return logrus.ErrorLevel
+		return zapcore.ErrorLevel
 	case "fatal":
-		return logrus.FatalLevel
+		return zapcore.FatalLevel
 	default:
-		return logrus.InfoLevel
+		return zapcore.InfoLevel
+
 	}
 }
